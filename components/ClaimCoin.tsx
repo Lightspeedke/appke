@@ -438,12 +438,13 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
           console.log("Trying with MiniKit...");
       
           const callbackResult = await MiniKit.commandsAsync.sendTransaction({
-            transactions: [{
-              recipient: contractAddress,
-              calldata: "0x379607f5", // claim()
-              amount: "0x0"
+            transaction: [{
+              recipient: contractAddress as string,  // Type assertion for recipient
+              calldata: "0x379607f5" as string,      // Type assertion for calldata
+              amount: "0x0" as string                // Type assertion for amount
             }]
           });
+          
         console.log("Transaction sent successfully with callback API:", callbackResult);
       
       
