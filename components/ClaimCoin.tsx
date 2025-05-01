@@ -464,10 +464,10 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
           console.log("Trying with callback-based API...");
       
           const callbackResult = await MiniKit.commandsAsync.sendTransaction({
-            transaction: [{
-              to: contractAddress,
-              data: "0x379607f5", // Function selector for "claim()"
-              value: "0x0"
+            transactions: [{
+              recipient: contractAddress,
+              calldata: "0x379607f5", // Function selector for "claim()"
+              amount: "0x0"
             }]
           });
       
