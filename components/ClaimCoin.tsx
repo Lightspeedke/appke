@@ -433,33 +433,29 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
           }]
         });
   
-      if (!transactionId) {
-        try {
-          console.log("Trying with MiniKit...");
-      
-          const callbackResult = await MiniKit.commandsAsync.sendTransaction({
-            transaction: [{
-              recipient: contractAddress as string,  // Type assertion for recipient
-              calldata: "0x379607f5" as string,      // Type assertion for calldata
-              amount: "0x0" as string                // Type assertion for amount
-            }]
-          });
-          
-        console.log("Transaction sent successfully with callback API:", callbackResult);
-      
-      
-          result = callbackResult;
-          transactionId = extractTransactionId(callbackResult);
-      
-          if (transactionId) {
-            console.log("Successfully extracted transaction ID from callback format:", transactionId);
-            return { result, transactionId, reference };
+        if (!transactionId) {
+          try {
+            console.log("Trying with callback-based API...");
+            const callbackResult = await MiniKit.commandsAsync.sendTransaction({
+              transactions: [{  // Note: 'transactions' not 'transaction'
+                recipient: contractAddress,  // Use 'recipient' not 'to'
+                calldata: "0x379607f5", // Function selector for "claim()"
+                amount: "0x0"  // Use 'amount' not 'value'
+              }]
+            });
+            
+            console.log("Transaction sent successfully with callback API:", callbackResult);
+            result = callbackResult;
+            transactionId = extractTransactionId(callbackResult);
+            
+            if (transactionId) {
+              console.log("Successfully extracted transaction ID from callback format:", transactionId);
+              return { result, transactionId, reference };
+            }
+          } catch (selectorError) {
+            console.error("Error with function selector format:", selectorError);
           }
-        } catch (err) {
-          console.error("Callback API transaction failed:", err);
-          throw err;
         }
-      }
       if (!transactionId) {
         try {
           console.log("Trying with callback-based API...");
