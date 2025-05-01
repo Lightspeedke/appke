@@ -439,13 +439,14 @@ if (!transactionId) {
       
           const callbackResult = await MiniKit.commandsAsync.sendTransaction({
             transaction: [{
-              to: contractAddress,
-              data: "0x379607f5", // Function selector for "claim()"
-              value: "0x0"
+              recipient: contractAddress,
+              calldata: "0x379607f5", // Function selector for "claim()"
+              amount: "0x0"
             }]
           });
       
           console.log("Transaction sent successfully with callback API:", callbackResult);
+      
       
           result = callbackResult;
           transactionId = extractTransactionId(callbackResult);
