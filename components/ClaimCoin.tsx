@@ -421,31 +421,30 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
       }
 
      // Approach 3: Try with direct function selector
-if (!transactionId) {
-    try {
-      console.log("Trying with direct function selector...")
-  
-      const selectorPayload = {
-        transaction: { // <-- FIXED: wrap inside "transaction"
-          to: contractAddress,
-          data: "0x379607f5", // Function selector for "claim()"
-          value: "0x0",
-        }
-      }
+     if (!transactionId) {
+      try {
+        console.log("Trying with callback-based API...");
+    
+        const callbackResult = await MiniKit.commandsAsync.sendTransaction({
+          transactions: [{
+            recipient: contractAddress,
+            calldata: "0x379607f5", // Function selector for "claim()"
+            amount: "0x0"
+          }]
+        });
   
       if (!transactionId) {
         try {
-          console.log("Trying with callback-based API...");
+          console.log("Trying with MiniKit...");
       
           const callbackResult = await MiniKit.commandsAsync.sendTransaction({
-            transaction: [{
+            transactions: [{
               recipient: contractAddress,
-              calldata: "0x379607f5", // Function selector for "claim()"
+              calldata: "0x379607f5", // claim()
               amount: "0x0"
             }]
           });
-      
-          console.log("Transaction sent successfully with callback API:", callbackResult);
+        console.log("Transaction sent successfully with callback API:", callbackResult);
       
       
           result = callbackResult;
@@ -498,11 +497,11 @@ if (!transactionId) {
       console.log("Trying with callback-based API...");
   
       const callbackResult = await MiniKit.commandsAsync.sendTransaction({
-        transaction: {
-          to: contractAddress,
-          data: "0x379607f5", // Function selector for "claim()"
-          value: "0x0"
-        }
+        transactions: [{
+          recipient: contractAddress,
+          calldata: "0x379607f5", // Function selector for "claim()"
+          amount: "0x0"
+        }]
       });
   
       console.log("Transaction sent successfully with callback API:", callbackResult);
