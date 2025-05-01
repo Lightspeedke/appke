@@ -1,3 +1,4 @@
+
 "use client"
 import type React from "react"
 import { useState, useEffect } from "react"
@@ -6,15 +7,12 @@ import DEXABI from "@/components/abi/DEX.json"
 import { MiniKit } from "@worldcoin/minikit-js"
 import Cookies from "js-cookie"
 import { verifyTransaction } from "@/app/actions/verify-transaction"
-
 // Types
 type ClaimCoinProps = {
   userAddress: string
 }
-
 type TabType = "claim" | "tasks"
 type SocialPlatform = "telegram" | "twitter" | "YouTube"
-
 const socialPlatforms: Record<
   SocialPlatform,
   {
@@ -55,25 +53,20 @@ const socialPlatforms: Record<
     ),
   },
 }
-
 const testTokens = {
   worldchain: {
     ASTRACOIN: "0x5EFA7f371c256c7548539ca54632D7dab68852b1",
   },
 }
-
 const DEX_CONTRACT_ADDRESS = "0x1F53330Bc66d9e38e4fE4561D515A73eD59787b6"
-
 // Analytics tracking function
 const trackEvent = (eventName: string, properties?: Record<string, any>) => {
   console.log(`[Analytics] ${eventName}`, properties)
   // Replace with your analytics implementation
   // Example: mixpanel.track(eventName, properties);
 }
-
 // Global storage key for claim timer
 const getClaimTimerKey = () => "astra_next_claim_time"
-
 export function ClaimCoin({ userAddress }: ClaimCoinProps) {
   // State
   const [activeTab, setActiveTab] = useState<TabType>("claim")
@@ -88,10 +81,8 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
   const [followingPlatform, setFollowingPlatform] = useState<SocialPlatform | null>(null)
   const [retryCount, setRetryCount] = useState(0)
   const MAX_RETRIES = 3
-
   // Countdown timer state
   const [nextClaimTime, setNextClaimTime] = useState<number | null>(null)
-
   // Load next claim time from localStorage - using a global key instead of user-specific
   useEffect(() => {
     const loadClaimTimer = () => {
@@ -112,19 +103,14 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
         console.error("Error loading claim timer:", error)
       }
     }
-
     loadClaimTimer()
-
     // Check for timer updates every second (in case it was updated in another tab)
     const checkTimerInterval = setInterval(loadClaimTimer, 1000)
-
     return () => clearInterval(checkTimerInterval)
   }, [])
-
   // Update countdown timer every second
   useEffect(() => {
     if (!nextClaimTime) return
-
     const interval = setInterval(() => {
       const now = Date.now()
       if (nextClaimTime <= now) {
@@ -133,22 +119,17 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
         console.log("Timer expired, cleared from localStorage")
       }
     }, 1000)
-
     return () => clearInterval(interval)
   }, [nextClaimTime])
-
   // Replace the localStorage-based balance initialization
   const [balance, setBalance] = useState<number>(1) // Default to 5000 initially
-
   // Add a useEffect to fetch the balance from API when component mounts or userAddress changes
   useEffect(() => {
     const fetchBalance = async () => {
       try {
         console.log(`Fetching balance for address: ${userAddress}`)
-
         // Fetch balance from API
         const response = await fetch(`/api/confirm-payment/${userAddress}`)
-
         if (response.ok) {
           const data = await response.json()
           console.log(`Balance data received:`, data)
@@ -160,17 +141,14 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
         console.error("Error fetching balance:", error)
       }
     }
-
     if (userAddress) {
       fetchBalance()
     }
   }, [userAddress]) // Re-fetch when userAddress changes
-
   // Reset retry count when user changes
   useEffect(() => {
     setRetryCount(0)
   }, [userAddress])
-
   // Load social status from localStorage
   useEffect(() => {
     const loadSocialStatus = () => {
@@ -185,24 +163,19 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
       })
       setSocialFollowed(status)
     }
-
     loadSocialStatus()
   }, [userAddress])
-
   const handleInstallMiniKit = () => {
     trackEvent("install_minikit_clicked", { userAddress })
     window.open("https://www.worldcoin.org/minikit", "_blank")
   }
-
   const handleSocialFollow = async (platform: SocialPlatform) => {
     try {
       trackEvent("social_follow_started", { userAddress, platform })
       setFollowingPlatform(platform)
       window.open(socialPlatforms[platform].url, "_blank")
-
       // Add a small delay to simulate the follow action
       await new Promise((resolve) => setTimeout(resolve, 1000))
-
       setSocialFollowed((prev) => ({
         ...prev,
         [platform]: true,
@@ -216,10 +189,8 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
       setFollowingPlatform(null)
     }
   }
-
   const extractTransactionId = (result: any): string => {
     console.log("Attempting to extract transaction ID from result:", JSON.stringify(result, null, 2))
-
     if (!result) {
       console.error("Result is null or undefined")
       return ""
@@ -228,7 +199,6 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
       console.log("Found transaction_id in standard response format:", result.transaction_id)
       return result.transaction_id
     }
-
     // If result is a string, it might be the transaction ID directly
     if (typeof result === "string") {
       if (result.startsWith("0x")) {
@@ -241,14 +211,11 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
         return withPrefix
       }
     }
-
     // Log all top-level keys to help diagnose
     if (typeof result === "object") {
       console.log("Available keys in result:", Object.keys(result))
     }
-
     const possibleHashProps = ["transactionHash", "txHash", "hash", "id", "transaction", "tx", "txId", "transactionId"]
-
     for (const prop of possibleHashProps) {
       if (result[prop] && typeof result[prop] === "string") {
         if (result[prop].startsWith("0x")) {
@@ -262,7 +229,6 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
         }
       }
     }
-
     if (Array.isArray(result) && result.length > 0) {
       console.log("Result is an array, checking first item")
       const firstItem = result[0]
@@ -275,7 +241,6 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
       }
       return extractTransactionId(firstItem)
     }
-
     for (const key in result) {
       if (result[key] && typeof result[key] === "object") {
         console.log(`Checking nested object '${key}'`)
@@ -283,51 +248,44 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
         if (nestedId) return nestedId
       }
     }
-
     // If we still don't have a transaction ID, log the entire result for debugging
     console.error("Could not find transaction ID in result. Full result:", JSON.stringify(result, null, 2))
     return ""
   }
-
   const executeMiniKitTransaction = async () => {
     try {
       if (!MiniKit.isInstalled()) {
-        throw new Error("MiniKit wallet is not installed")
+        throw new Error("MiniKit wallet is not installed");
       }
-
-      console.log("MiniKit is installed, preparing transaction...")
-
-      const reference = `claim-${Date.now()}-${Math.floor(Math.random() * 1000000)}`
-      console.log("Generated reference:", reference)
-
-      Cookies.set("payment-nonce", reference, { expires: 100 })
-
+      console.log("MiniKit is installed, preparing transaction...");
+      const reference = `claim-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+      console.log("Generated reference:", reference);
+      Cookies.set("payment-nonce", reference, { expires: 100 });
+      
       // Use the correct contract address
-      const contractAddress = DEX_CONTRACT_ADDRESS
-      console.log("Contract address:", contractAddress)
-      console.log("User address:", userAddress)
-
+      const contractAddress = DEX_CONTRACT_ADDRESS;
+      console.log("Contract address:", contractAddress);
+      console.log("User address:", userAddress);
+      
       // Check if the ABI contains the claim function
-      const claimFunction = DEXABI.find((item) => item.type === "function" && item.name === "claim")
-
+      const claimFunction = DEXABI.find((item) => item.type === "function" && item.name === "claim");
       if (!claimFunction) {
         console.warn(
           "Warning: 'claim' function not found in ABI. Available functions:",
           DEXABI.filter((item) => item.type === "function")
             .map((f) => f.name)
-            .join(", "),
-        )
+            .join(", ")
+        );
       } else {
-        console.log("Claim function found in ABI:", claimFunction)
+        console.log("Claim function found in ABI:", claimFunction);
       }
-
-      let transactionId = ""
-      let result
-
+  
+      let transactionId = "";
+      let result;
+  
       // Approach 1: Use the documented MiniKit format
       try {
-        console.log("Trying documented MiniKit transaction format...")
-
+        console.log("Trying documented MiniKit transaction format...");
         const transactionPayload = {
           transaction: [
             {
@@ -345,43 +303,33 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
               args: [],
             },
           ],
-        }
-
-        console.log("Transaction payload:", JSON.stringify(transactionPayload, null, 2))
-
-        const { commandPayload, finalPayload } = await MiniKit.commandsAsync.sendTransaction(transactionPayload)
-        console.log("Transaction sent successfully with documented format")
-        console.log("Command payload:", commandPayload)
-        console.log("Final payload:", finalPayload)
-
-        result = finalPayload
-
+        };
+        console.log("Transaction payload:", JSON.stringify(transactionPayload, null, 2));
+        const response = await MiniKit.commandsAsync.sendTransaction(transactionPayload);
+        console.log("Transaction sent successfully with documented format");
+        console.log("Response:", response);
+        result = response;
+        
         // Try to extract transaction ID from the result
-        if (
-            finalPayload &&
-            typeof finalPayload === 'object' &&
-            'transaction_id' in finalPayload
-          ) {
-            transactionId = (finalPayload as any).transaction_id;
-            console.log("Found transaction_id in finalPayload:", transactionId);
-          } else {
-            transactionId = extractTransactionId(finalPayload);
-          }
-          
-          if (transactionId) {
-            console.log("Successfully extracted transaction ID:", transactionId);
-            return { result, transactionId, reference };
-          }
-          
+        if (response && typeof response === 'object' && 'transaction_id' in response) {
+          transactionId = (response as any).transaction_id;
+          console.log("Found transaction_id in response:", transactionId);
+        } else {
+          transactionId = extractTransactionId(response);
+        }
+        
+        if (transactionId) {
+          console.log("Successfully extracted transaction ID:", transactionId);
+          return { result, transactionId, reference };
+        }
       } catch (docError) {
-        console.error("Error with documented format:", docError)
+        console.error("Error with documented format:", docError);
       }
-
+  
       // Approach 2: Try with a simplified transaction format
       if (!transactionId) {
         try {
-          console.log("Trying simplified transaction format...")
-
+          console.log("Trying simplified transaction format...");
           const simplePayload = {
             transaction: [
               {
@@ -399,138 +347,38 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
                 args: [],
               },
             ],
-          }
-
-          console.log("Simple payload:", JSON.stringify(simplePayload, null, 2))
-
-          const simpleResult = await MiniKit.commandsAsync.sendTransaction(simplePayload)
-          console.log("Transaction sent successfully with simplified format:", simpleResult)
-
-          result = simpleResult
-
+          };
+          console.log("Simple payload:", JSON.stringify(simplePayload, null, 2));
+          const simpleResult = await MiniKit.commandsAsync.sendTransaction(simplePayload);
+          console.log("Transaction sent successfully with simplified format:", simpleResult);
+          result = simpleResult;
+          
           // Try to extract transaction ID
-          transactionId = extractTransactionId(simpleResult)
-
+          transactionId = extractTransactionId(simpleResult);
           if (transactionId) {
-            console.log("Successfully extracted transaction ID from simplified format:", transactionId)
-            return { result, transactionId, reference }
-          }
-        } catch (simpleError) {
-          console.error("Error with simplified format:", simpleError)
-        }
-      }
-
-     // Approach 3: Try with direct function selector
-     if (!transactionId) {
-      try {
-        console.log("Trying with callback-based API...");
-    
-        const callbackResult = await MiniKit.commandsAsync.sendTransaction({
-          transactions: [{
-            recipient: contractAddress,
-            calldata: "0x379607f5", // Function selector for "claim()"
-            amount: "0x0"
-          }]
-        });
-  
-        if (!transactionId) {
-          try {
-            console.log("Trying with callback-based API...");
-            const callbackResult = await MiniKit.commandsAsync.sendTransaction({
-              transactions: [{  // Note: 'transactions' not 'transaction'
-                recipient: contractAddress,  // Use 'recipient' not 'to'
-                calldata: "0x379607f5", // Function selector for "claim()"
-                amount: "0x0"  // Use 'amount' not 'value'
-              }]
-            });
-            
-            console.log("Transaction sent successfully with callback API:", callbackResult);
-            result = callbackResult;
-            transactionId = extractTransactionId(callbackResult);
-            
-            if (transactionId) {
-              console.log("Successfully extracted transaction ID from callback format:", transactionId);
-              return { result, transactionId, reference };
-            }
-          } catch (selectorError) {
-            console.error("Error with function selector format:", selectorError);
-          }
-        }
-      if (!transactionId) {
-        try {
-          console.log("Trying with callback-based API...");
-      
-          const callbackResult = await MiniKit.commandsAsync.sendTransaction({
-            transactions: [{
-              recipient: contractAddress,
-              calldata: "0x379607f5", // Function selector for "claim()"
-              amount: "0x0"
-            }]
-          });
-      
-          console.log("Transaction sent successfully with callback API:", callbackResult);
-      
-          result = callbackResult;
-          transactionId = extractTransactionId(callbackResult);
-      
-          if (transactionId) {
-            console.log("Successfully extracted transaction ID from callback format:", transactionId);
+            console.log("Successfully extracted transaction ID from simplified format:", transactionId);
             return { result, transactionId, reference };
           }
-        } catch (err) {
-          console.error("Callback API transaction failed:", err);
-          throw err;
+        } catch (simpleError) {
+          console.error("Error with simplified format:", simpleError);
         }
       }
-            
-    } catch (selectorError) {
-      console.error("Error with function selector format:", selectorError)
-    }
-  }
   
-  // Approach 4: Try with callback-based API
-  if (!transactionId) {
-    try {
-      console.log("Trying with callback-based API...");
-  
-      const callbackResult = await MiniKit.commandsAsync.sendTransaction({
-        transactions: [{
-          recipient: contractAddress,
-          calldata: "0x379607f5", // Function selector for "claim()"
-          amount: "0x0"
-        }]
-      });
-  
-      console.log("Transaction sent successfully with callback API:", callbackResult);
-  
-      result = callbackResult;
-  
-      transactionId = extractTransactionId(callbackResult);
-  
-      if (transactionId) {
-        console.log("Successfully extracted transaction ID from callback API:", transactionId);
-        return { result, transactionId, reference };
-      }
-    } catch (callbackError) {
-      console.error("Error with callback API:", callbackError);
-    }
-  }
-  
-
       // If we've tried all approaches and still don't have a transaction ID
       if (!transactionId) {
         throw new Error(
-          "Could not obtain a valid transaction ID after multiple attempts. Please try again or contact support.",
-        )
+          "Could not obtain a valid transaction ID after multiple attempts. Please try again or contact support."
+        );
       }
-
-      return { result, transactionId, reference }
+      
+      return { result, transactionId, reference };
     } catch (error) {
-      console.error("MiniKit transaction error:", error)
-      throw error
+      console.error("MiniKit transaction error:", error);
+      throw error;
     }
-  }
-
+  };
+  
+  
   // Update the handleClaim function to better handle the transaction result
   const handleClaim = async () => {
     try {
@@ -538,39 +386,31 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
       setIsClaiming(true)
       setError(null)
       console.log("Starting claim process for address:", userAddress)
-
       if (!allSocialFollowed) {
         throw new Error("Please follow all social channels before claiming")
       }
-
       // Check if MiniKit is installed
       if (!MiniKit.isInstalled()) {
         throw new Error("MiniKit wallet is not installed. Please install it first.")
       }
-
       // Check if user can claim with improved error handling
       console.log(`Checking claim eligibility for ${userAddress}...`)
       let canClaimCheck
-
       try {
         const response = await fetch(`/api/confirm-payment/${userAddress}`)
         console.log(`Eligibility API response status: ${response.status}`)
-
         if (!response.ok) {
           console.error(`API returned error status: ${response.status}`)
           throw new Error(`API error: ${response.status}`)
         }
-
         canClaimCheck = await response.json()
         console.log("Eligibility check result:", canClaimCheck)
       } catch (fetchError) {
         console.error("Error fetching claim eligibility:", fetchError)
-
         // If the API fails, we'll proceed with the claim anyway
         console.log("Proceeding with claim despite API error")
         canClaimCheck = { success: true, canClaim: true }
       }
-
       if (!canClaimCheck.success || !canClaimCheck.canClaim) {
         // Show the specific reason why the user can't claim
         if (canClaimCheck.reason) {
@@ -579,34 +419,26 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
           throw new Error("You are not eligible to claim at this time")
         }
       }
-
       // Execute the MiniKit transaction
       console.log("Executing MiniKit transaction...")
       try {
         const txResult = await executeMiniKitTransaction()
         console.log("Transaction result:", txResult)
-
         const { transactionId, reference } = txResult
-
         if (!transactionId) {
           throw new Error("Failed to get a valid transaction ID. Please try again.")
         }
-
         console.log("Transaction sent successfully, ID:", transactionId)
-
         // Verify the transaction with the backend
         try {
           console.log("Verifying transaction with backend...")
           console.log("Verification params:", { transactionId, reference, userAddress })
-
           const verificationResult = await verifyTransaction({
             transactionId,
             reference,
             userAddress,
           })
-
           console.log("Verification result:", verificationResult)
-
           if (!verificationResult.success) {
             console.warn("Transaction verification warning:", verificationResult.message)
             // We'll continue anyway since the transaction was sent
@@ -615,23 +447,17 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
           console.error("Error during verification:", verifyError)
           // Continue anyway since the transaction was sent
         }
-
         console.log("Claim process completed")
-
         // Update local state to reflect successful claim
         setClaimSuccess(true)
-
         // Set the next claim time to 24 hours from now
         const nextClaimTimeValue = Date.now() + 24 * 60 * 60 * 1000
         setNextClaimTime(nextClaimTimeValue)
-
         // Store the next claim time in localStorage with a global key
         localStorage.setItem(getClaimTimerKey(), nextClaimTimeValue.toString())
         console.log(`Set next claim time to: ${new Date(nextClaimTimeValue).toLocaleString()}`)
-
         // Update the balance
         setBalance((prev) => prev + 1) // Add 1 ASTRA to the balance
-
         trackEvent("claim_success", { userAddress, transactionId })
       } catch (txError) {
         console.error("Transaction error:", txError)
@@ -639,29 +465,34 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
       }
     } catch (err) {
       console.error("Claim error:", err)
-      setError(err.message || "Failed to claim tokens. Please try again.")
-      trackEvent("claim_error", { userAddress, error: err.message })
+       const errorMessage = 
+        err instanceof Error ? err.message : 
+        typeof err === 'object' && err !== null && 'message' in err ? (err as {message: string}).message :
+        typeof err === 'string' ? err : 
+        "Failed to claim tokens. Please try again.";
+      
+      setError(errorMessage);
+      
+      // For the tracking event, also handle the error message safely
+      trackEvent("claim_error", { 
+        userAddress, 
+        error: errorMessage 
+      });
     } finally {
       setIsClaiming(false)
     }
   }
-
   const allSocialFollowed = Object.values(socialFollowed).every(Boolean)
-
   // Format time for countdown display
   const formatCountdown = () => {
     if (!nextClaimTime) return { hours: 0, minutes: 0, seconds: 0 }
-
     const timeLeft = Math.max(0, nextClaimTime - Date.now())
     const hours = Math.floor(timeLeft / (1000 * 60 * 60))
     const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60))
     const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000)
-
     return { hours, minutes, seconds }
   }
-
   const countdown = formatCountdown()
-
   // Render countdown timer
   const renderCountdown = () => {
     return (
@@ -681,7 +512,6 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
       </div>
     )
   }
-
   // Component rendering functions
   const renderSocialButtons = (platform: SocialPlatform) => {
     const { name, color, icon } = socialPlatforms[platform]
@@ -735,7 +565,6 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
       </div>
     )
   }
-
   const renderSocialBadge = (platform: SocialPlatform) => {
     const { name, color, icon } = socialPlatforms[platform]
     const isComplete = socialFollowed[platform]
@@ -769,7 +598,6 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
       </div>
     )
   }
-
   if (claimSuccess) {
     return (
       <div className="success-container">
@@ -799,14 +627,12 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
         >
           {balance.toLocaleString()} ASTRA
         </div>
-
         {nextClaimTime !== null && (
           <div className="next-claim-container">
             <h4 style={{ color: "white", marginBottom: "10px" }}>Next claim available in:</h4>
             {renderCountdown()}
           </div>
         )}
-
         <button
           onClick={() => setClaimSuccess(false)}
           className="claim-button"
@@ -818,12 +644,10 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
       </div>
     )
   }
-
   return (
     <div className="claim-coin-container">
       <h1 className="text-blue-800">Daily Astra Claim</h1>
       <p>Claim your daily rewards and earn Astra tokens</p>
-
       <div className="tab-container">
         <button
           onClick={() => setActiveTab("claim")}
@@ -852,9 +676,7 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
                 {nextClaimTime !== null ? "Claimed Today" : "Available Now"}
               </span>
             </div>
-
             {nextClaimTime !== null && renderCountdown()}
-
             {error && (
               <div className="error-message" role="alert">
                 <div className="error-icon">
@@ -892,7 +714,6 @@ export function ClaimCoin({ userAddress }: ClaimCoinProps) {
                 )}
               </div>
             )}
-
             <button
               onClick={!MiniKit.isInstalled() ? handleInstallMiniKit : handleClaim}
               disabled={
